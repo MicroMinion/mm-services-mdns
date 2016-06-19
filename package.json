@@ -1,6 +1,6 @@
 {
   "name": "mm-services-mdns",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "mDNS service for MicroMinion platform",
   "main": "index.js",
   "dependencies": {
@@ -8,8 +8,14 @@
     "lodash": "^4.13.1",
     "mdns-js": "^0.5.0"
   },
-  "devDependencies": {},
-  "scripts": {},
+  "devDependencies": {
+    "publish": "^0.6.0"    
+  },
+  "scripts": {
+    "check-updates": "npm-check",
+    "test": "echo",
+    "2npm": "publish"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MicroMinion/mm-services-mdns.git"

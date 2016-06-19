@@ -2,11 +2,11 @@
 
 var mdns = require('mdns-js')
 var _ = require('lodash')
-var debug = require('debug')('flunky-services:mdns')
+var debug = require('debug')('mm-services:mdns')
 
-var isFlunky = function (data, protocol) {
+var isMM = function (data, protocol) {
   return _.some(data.type, function (typeEntry) {
-    return typeEntry.name === 'flunky' && typeEntry.protocol === protocol
+    return typeEntry.name === 'mm' && typeEntry.protocol === protocol
   })
 }
 
@@ -20,7 +20,7 @@ var mDNSService = function (options) {
     service.browser.discover()
   })
   this.browser.on('update', function (data) {
-    if (isFlunky(data, 'tcp') || isFlunky(data, 'udp')) {
+    if (isMM(data, 'tcp') || isMM(data, 'udp')) {
       var port = data.port
       var addresses = data.addresses
       var signId = data.host.split('.')[0]
@@ -30,7 +30,7 @@ var mDNSService = function (options) {
         boxId: boxId,
         connectionInfo: []
       }
-      if (isFlunky(data, 'tcp')) {
+      if (isMM(data, 'tcp')) {
         _.forEach(addresses, function (address) {
           nodeInfo.connectionInfo.push({
             transportType: 'tcp',
@@ -41,7 +41,7 @@ var mDNSService = function (options) {
           })
         })
       }
-      if (isFlunky(data, 'udp')) {
+      if (isMM(data, 'udp')) {
         _.forEach(addresses, function (address) {
           nodeInfo.connectionInfo.push({
             transportType: 'udp',
@@ -75,7 +75,6 @@ mDNSService.prototype._requestAll = function (topic, local, data) {
 mDNSService.prototype._update = function (topic, publicKey, data) {
   debug('_update')
   this.nodeInfo = data
-  var mdns = this
   if (_.some(this.nodeInfo.connectionInfo, function (transport) {
       return transport.transportType === 'tcp'
     })) {
@@ -85,7 +84,7 @@ mDNSService.prototype._update = function (topic, publicKey, data) {
     var port = _.find(this.nodeInfo.connectionInfo, function (transport) {
       return transport.transportType === 'tcp'
     }).transportInfo.port
-    this.serviceTcp = mdns.createAdvertisement(mdns.tcp('flunky'), port, {
+    this.serviceTcp = mdns.createAdvertisement(mdns.tcp('mm'), port, {
       name: data.signId + '.' + data.boxId
     })
     this.serviceTcp.start()
@@ -99,7 +98,7 @@ mDNSService.prototype._update = function (topic, publicKey, data) {
     port = _.find(this.nodeInfo.connectionInfo, function (transport) {
       return transport.transportType === 'udp'
     }).transportInfo.port
-    this.serviceUdp = mdns.createAdvertisement(mdns.udp('flunky'), port, {
+    this.serviceUdp = mdns.createAdvertisement(mdns.udp('mm'), port, {
       name: data.signId + '.' + data.boxId
     })
     this.serviceUdp.start()
