@@ -20,7 +20,7 @@ var mDNSService = function (options) {
     service.browser.discover()
   })
   this.browser.on('update', function (data) {
-    if (isMM(data, 'tcp') || isMM(data, 'udp')) {
+    if (!_.isUndefined(data.host) && (isMM(data, 'tcp') || isMM(data, 'udp'))) {
       var port = data.port
       var addresses = data.addresses
       var signId = data.host.split('.')[0]
