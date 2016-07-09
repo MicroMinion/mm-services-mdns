@@ -1,91 +1,54 @@
 'use strict'
 
-var mdns = require('mdns-js')
+var MulticastDNS = require('multicast-dns')
 var _ = require('lodash')
 var debug = require('debug')('mm-services:mdns')
 
-var isMM = function (data, protocol) {
-  return _.some(data.type, function (typeEntry) {
-    return typeEntry.name === 'mm' && typeEntry.protocol === protocol
-  })
-}
-
 var mDNSService = function (options) {
   debug('initialize')
-  var service = this
+  var self = this
   this.hosts = {}
   this.messaging = options.platform.messaging
-  this.browser = mdns.createBrowser(mdns.udp('mm'))
-  this.browser.on('ready', function () {
-    service.browser.discover()
+  this.mdns = new MulticastDNS({
+    loopback: true
   })
-  this.browser.on('update', function (data) {
-    debug('update received')
-    if (!_.isUndefined(data.host) && isMM(data, 'udp')) {
-      debug('valid mm host data received')
-      var port = data.port
-      var addresses = data.addresses
-      var signId = data.host.split('.')[0]
-      var boxId = data.host.split('.')[1]
-      var nodeInfo = {
-        signId: signId,
-        boxId: boxId,
-        connectionInfo: []
+  this.mdns.on('response', function (response) {
+    debug('response')
+    _.forEach(response.answers, function (answer) {
+      if (answer.name === '_mm.local' && answer.type === 'TXT') {
+        debug('valid response')
+        var nodeInfo = JSON.parse(answer.data.toString())
+        // TODO: Validate incoming data
+        self.hosts[nodeInfo.signId] = nodeInfo
+        self.messaging.send('transports.nodeInfo', 'local', nodeInfo)
+        self.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
       }
-      _.forEach(addresses, function (address) {
-        nodeInfo.connectionInfo.push({
-          transportType: 'udp',
-          transportInfo: {
-            port: port,
-            address: address
-          }
-        })
-      })
-      service.hosts[signId] = nodeInfo
-      debug(JSON.stringify(nodeInfo))
-      service.messaging.send('transports.nodeInfo', 'local', nodeInfo)
-      service.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
-    }
+    })
+  })
+  this.mdns.on('query', function (query) {
+    _.forEach(query.questions, function (question) {
+      if (question.name === '_mm.local' && question.type === 'TXT' && self.nodeInfo) {
+        self.mdns.respond([{
+          name: '_mm.local',
+          type: 'TXT',
+          data: JSON.stringify(self.nodeInfo)
+        }])
+      }
+    })
   })
   this.messaging.on('self.transports.myNodeInfo', this._update.bind(this))
-  this.messaging.on('self.transports.requestNodeInfo', this._request.bind(this))
   this.messaging.on('self.transports.requestBootstrapNodeInfo', this._requestAll.bind(this))
 }
 
 mDNSService.prototype._requestAll = function (topic, local, data) {
   debug('_requestAll')
-  var self = this
-  debug(this.hosts)
-  _.forEach(this.hosts, function (nodeInfo) {
-    self.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
-  }, this)
+  this.mdns.query('_mm.local', 'TXT')
 }
 
 mDNSService.prototype._update = function (topic, publicKey, data) {
   debug('_update')
   this.nodeInfo = data
-  if (_.some(this.nodeInfo.connectionInfo, function (transport) {
-      return transport.transportType === 'udp'
-    })) {
-    if (this.serviceUdp) {
-      debug('stopping udp service')
-      this.serviceUdp.stop()
-    }
-    var port = _.find(this.nodeInfo.connectionInfo, function (transport) {
-      return transport.transportType === 'udp'
-    }).transportInfo.port
-    this.serviceUdp = mdns.createAdvertisement(mdns.udp('mm'), port, {
-      name: data.signId + '.' + data.boxId
-    })
-    this.serviceUdp.start()
-  }
-}
-
-mDNSService.prototype._request = function (topic, publicKey, data) {
-  debug('_request')
-  if (_.has(this.hosts, data)) {
-    this.messaging.send('transports.nodeInfo', 'local', this.hosts[data])
-  }
+  this.mdns.query('_mm.local', 'TXT')
 }
 
 module.exports = mDNSService
