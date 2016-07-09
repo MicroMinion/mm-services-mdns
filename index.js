@@ -11,16 +11,18 @@ var isMM = function (data, protocol) {
 }
 
 var mDNSService = function (options) {
+  debug('initialize')
   var service = this
   this.hosts = {}
   this.messaging = options.platform.messaging
-  // mdns.excludeInterface('0.0.0.0')
-  this.browser = mdns.createBrowser()
+  this.browser = mdns.createBrowser(mdns.udp('mm'))
   this.browser.on('ready', function () {
     service.browser.discover()
   })
   this.browser.on('update', function (data) {
-    if (!_.isUndefined(data.host) && (isMM(data, 'tcp') || isMM(data, 'udp'))) {
+    debug('update received')
+    if (!_.isUndefined(data.host) && isMM(data, 'udp')) {
+      debug('valid mm host data received')
       var port = data.port
       var addresses = data.addresses
       var signId = data.host.split('.')[0]
@@ -30,30 +32,17 @@ var mDNSService = function (options) {
         boxId: boxId,
         connectionInfo: []
       }
-      if (isMM(data, 'tcp')) {
-        _.forEach(addresses, function (address) {
-          nodeInfo.connectionInfo.push({
-            transportType: 'tcp',
-            transportInfo: {
-              port: port,
-              address: address
-            }
-          })
+      _.forEach(addresses, function (address) {
+        nodeInfo.connectionInfo.push({
+          transportType: 'udp',
+          transportInfo: {
+            port: port,
+            address: address
+          }
         })
-      }
-      if (isMM(data, 'udp')) {
-        _.forEach(addresses, function (address) {
-          nodeInfo.connectionInfo.push({
-            transportType: 'udp',
-            transportInfo: {
-              port: port,
-              address: address
-            }
-          })
-        })
-      }
+      })
       service.hosts[signId] = nodeInfo
-      debug(nodeInfo)
+      debug(JSON.stringify(nodeInfo))
       service.messaging.send('transports.nodeInfo', 'local', nodeInfo)
       service.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
     }
@@ -76,26 +65,13 @@ mDNSService.prototype._update = function (topic, publicKey, data) {
   debug('_update')
   this.nodeInfo = data
   if (_.some(this.nodeInfo.connectionInfo, function (transport) {
-      return transport.transportType === 'tcp'
-    })) {
-    if (this.serviceTcp) {
-      this.serviceTcp.stop()
-    }
-    var port = _.find(this.nodeInfo.connectionInfo, function (transport) {
-      return transport.transportType === 'tcp'
-    }).transportInfo.port
-    this.serviceTcp = mdns.createAdvertisement(mdns.tcp('mm'), port, {
-      name: data.signId + '.' + data.boxId
-    })
-    this.serviceTcp.start()
-  }
-  if (_.some(this.nodeInfo.connectionInfo, function (transport) {
       return transport.transportType === 'udp'
     })) {
     if (this.serviceUdp) {
+      debug('stopping udp service')
       this.serviceUdp.stop()
     }
-    port = _.find(this.nodeInfo.connectionInfo, function (transport) {
+    var port = _.find(this.nodeInfo.connectionInfo, function (transport) {
       return transport.transportType === 'udp'
     }).transportInfo.port
     this.serviceUdp = mdns.createAdvertisement(mdns.udp('mm'), port, {
