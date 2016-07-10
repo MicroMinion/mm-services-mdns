@@ -16,6 +16,14 @@ var mdns = new MulticastDNS({platform: platform})
 ```
 ## Messaging API
 
+### Data structures
+
+#### nodeInfo: Javascript object with node information
+
+* **boxId**: base64 encoded public encryption key used by [nacl](https://github.com/dchest/tweetnacl-js#public-key-authenticated-encryption-box)
+* **signId**: base64 encoded public signature key used by [nacl](https://github.com/dchest/tweetnacl-js#signatures)
+* **connectionInfo**: javascript dictionary with [1tp](https://github.com/MicroMinion/1tp) connection information
+
 ### Published messages
 
 #### self.transports.nodeInfo
