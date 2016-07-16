@@ -20,8 +20,11 @@ var mDNSService = function (options) {
         var nodeInfo = JSON.parse(answer.data.toString())
         // TODO: Validate incoming data
         self.hosts[nodeInfo.signId] = nodeInfo
-        self.messaging.send('transports.nodeInfo', 'local', nodeInfo)
-        self.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
+        var delay = Math.floor(Math.random() * (2 * 1000 + 1))
+        setTimeout(function () {
+          self.messaging.send('transports.nodeInfo', 'local', nodeInfo)
+          self.messaging.send('transports.nodeInfoBootstrap', 'local', nodeInfo)
+        }, delay)
       }
     })
   })
