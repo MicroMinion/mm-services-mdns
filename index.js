@@ -19,7 +19,7 @@ var mDNSService = function (options) {
         debug('valid response')
         var nodeInfo = JSON.parse(answer.data.toString())
         // TODO: Validate incoming data
-        self.hosts[nodeInfo.signId] = nodeInfo
+        self.hosts[nodeInfo.boxId] = nodeInfo
         var delay = Math.floor(Math.random() * (2 * 1000 + 1))
         setTimeout(function () {
           self.messaging.send('transports.nodeInfo', 'local', nodeInfo)
