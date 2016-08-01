@@ -1,10 +1,9 @@
 {
   "name": "mm-services-mdns",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "mDNS service for MicroMinion platform",
   "main": "index.js",
   "dependencies": {
-    "debug": "^2.2.0",
     "lodash": "^4.14.1",
     "multicast-dns": "^6.0.1"
   },
