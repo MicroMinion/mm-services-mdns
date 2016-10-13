@@ -4,9 +4,9 @@ var MulticastDNS = require('multicast-dns')
 var winston = require('winston')
 var winstonWrapper = require('winston-meta-wrapper')
 
-var mDNSService = function (options) {
-  if (!(this instanceof mDNSService)) {
-    return new mDNSService(options)
+var MdnsService = function (options) {
+  if (!(this instanceof MdnsService)) {
+    return new MdnsService(options)
   }
   // logging
   this.setLogger(winston)
@@ -26,7 +26,7 @@ var mDNSService = function (options) {
   this.messaging.on('self.transports.requestBootstrapNodeInfo', this._requestAll.bind(this))
 }
 
-mDNSService.prototype._onResponse = function () {
+MdnsService.prototype._onResponse = function () {
   var self = this
   return function (response) {
     response.answers.forEach(function (answer) {
@@ -45,9 +45,9 @@ mDNSService.prototype._onResponse = function () {
   }
 }
 
-mDNSService.prototype._onQuery = function () {
+MdnsService.prototype._onQuery = function () {
   var self = this
-  function (query) {
+  return function (query) {
     query.questions.forEach(function (question) {
       if (question.name === '_mm.local' && question.type === 'TXT' && self.nodeInfo) {
         var response = [{
@@ -62,20 +62,20 @@ mDNSService.prototype._onQuery = function () {
   }
 }
 
-mDNSService.prototype._requestAll = function (topic, local, data) {
+MdnsService.prototype._requestAll = function (topic, local, data) {
   this.mdns.query('_mm.local', 'TXT')
 }
 
-mDNSService.prototype._update = function (topic, publicKey, data) {
+MdnsService.prototype._update = function (topic, publicKey, data) {
   this.nodeInfo = data
   this.mdns.query('_mm.local', 'TXT')
 }
 
-mDNSService.prototype.setLogger = function (logger) {
+MdnsService.prototype.setLogger = function (logger) {
   this._log = winstonWrapper(logger)
   this._log.addMeta({
     module: 'mm:services:mdns'
   })
 }
 
-module.exports = mDNSService
+module.exports = MdnsService
