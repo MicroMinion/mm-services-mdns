@@ -3,8 +3,6 @@
 var MulticastDNS = require('multicast-dns')
 var winston = require('winston')
 var winstonWrapper = require('winston-meta-wrapper')
-var _ = require('lodash')
-
 
 var mDNSService = function (options) {
   if (!(this instanceof mDNSService)) {
@@ -31,7 +29,7 @@ var mDNSService = function (options) {
 mDNSService.prototype._onResponse = function () {
   var self = this
   return function (response) {
-    _.forEach(response.answers, function (answer) {
+    response.answers.forEach(function (answer) {
       if (answer.name === '_mm.local' && answer.type === 'TXT') {
         var nodeInfo = JSON.parse(answer.data.toString())
         // TODO: Validate incoming data
@@ -49,7 +47,7 @@ mDNSService.prototype._onResponse = function () {
 mDNSService.prototype._onQuery = function () {
   var self = this
   function (query) {
-    _.forEach(query.questions, function (question) {
+    query.questions.forEach(function (question) {
       if (question.name === '_mm.local' && question.type === 'TXT' && self.nodeInfo) {
         se
         self.mdns.respond([{
