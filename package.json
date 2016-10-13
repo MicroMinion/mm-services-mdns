@@ -4,7 +4,9 @@
   "description": "mDNS service for MicroMinion platform",
   "main": "index.js",
   "dependencies": {
-    "multicast-dns": "^6.0.1"
+    "multicast-dns": "^6.0.1",
+    "winston": "^2.2.0",
+    "winston-meta-wrapper": "^1.1.0"
   },
   "devDependencies": {
     "publish": "^0.6.0"
