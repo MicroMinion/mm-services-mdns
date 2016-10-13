@@ -16,7 +16,9 @@ var mDNSService = function (options) {
   this.hosts = {}
   this.messaging = options.platform.messaging
   this.mdns = new MulticastDNS({
-    loopback: true
+    multicast: true,
+    loopback: true,
+    reuseAddr: true
   })
   // register mdns handlers
   this.mdns.on('response', this._onResponse())
