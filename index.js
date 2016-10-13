@@ -1,16 +1,34 @@
 'use strict'
 
 var MulticastDNS = require('multicast-dns')
+var winston = require('winston')
+var winstonWrapper = require('winston-meta-wrapper')
 var _ = require('lodash')
 
+
 var mDNSService = function (options) {
-  var self = this
+  if (!(this instanceof mDNSService)) {
+    return new mDNSService(options)
+  }
+  // logging
+  this.setLogger(winston)
+  // init
   this.hosts = {}
   this.messaging = options.platform.messaging
   this.mdns = new MulticastDNS({
     loopback: true
   })
-  this.mdns.on('response', function (response) {
+  // register mdns handlers
+  this.mdns.on('response', this._onResponse())
+  this.mdns.on('query', this._onQuery())
+  // register messaging handlers
+  this.messaging.on('self.transports.myNodeInfo', this._update.bind(this))
+  this.messaging.on('self.transports.requestBootstrapNodeInfo', this._requestAll.bind(this))
+}
+
+mDNSService.prototype._onResponse = function () {
+  var self = this
+  return function (response) {
     _.forEach(response.answers, function (answer) {
       if (answer.name === '_mm.local' && answer.type === 'TXT') {
         var nodeInfo = JSON.parse(answer.data.toString())
@@ -23,10 +41,15 @@ var mDNSService = function (options) {
         }, delay)
       }
     })
-  })
-  this.mdns.on('query', function (query) {
+  }
+}
+
+mDNSService.prototype._onQuery = function () {
+  var self = this
+  function (query) {
     _.forEach(query.questions, function (question) {
       if (question.name === '_mm.local' && question.type === 'TXT' && self.nodeInfo) {
+        se
         self.mdns.respond([{
           name: '_mm.local',
           type: 'TXT',
@@ -34,9 +57,7 @@ var mDNSService = function (options) {
         }])
       }
     })
-  })
-  this.messaging.on('self.transports.myNodeInfo', this._update.bind(this))
-  this.messaging.on('self.transports.requestBootstrapNodeInfo', this._requestAll.bind(this))
+  }
 }
 
 mDNSService.prototype._requestAll = function (topic, local, data) {
@@ -46,6 +67,13 @@ mDNSService.prototype._requestAll = function (topic, local, data) {
 mDNSService.prototype._update = function (topic, publicKey, data) {
   this.nodeInfo = data
   this.mdns.query('_mm.local', 'TXT')
+}
+
+mDNSService.prototype.setLogger = function (logger) {
+  this._log = winstonWrapper(logger)
+  this._log.addMeta({
+    module: 'mm:services:mdns'
+  })
 }
 
 module.exports = mDNSService
