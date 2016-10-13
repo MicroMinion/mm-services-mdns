@@ -32,8 +32,9 @@ mDNSService.prototype._onResponse = function () {
     response.answers.forEach(function (answer) {
       if (answer.name === '_mm.local' && answer.type === 'TXT') {
         var nodeInfo = JSON.parse(answer.data.toString())
+        self._log.debug('receiving mm.local mdns response including nodeInfo ' + JSON.stringify(nodeInfo))
         // TODO: Validate incoming data
-        self.hosts[nodeInfo.boxId] = nodeInfo
+        self.hosts[nodeInfo.boxId] = nodeInfo // @thomasdelaet -> what's the purpose of this?
         var delay = Math.floor(Math.random() * (2 * 1000 + 1))
         setTimeout(function () {
           self.messaging.send('transports.nodeInfo', 'local', nodeInfo)
@@ -49,12 +50,13 @@ mDNSService.prototype._onQuery = function () {
   function (query) {
     query.questions.forEach(function (question) {
       if (question.name === '_mm.local' && question.type === 'TXT' && self.nodeInfo) {
-        se
-        self.mdns.respond([{
+        var response = [{
           name: '_mm.local',
           type: 'TXT',
           data: JSON.stringify(self.nodeInfo)
-        }])
+        }]
+        self._log.debug('sending mm.local mdns response ' + JSON.stringify(response))
+        self.mdns.respond(response)
       }
     })
   }
