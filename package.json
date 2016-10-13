@@ -27,6 +27,12 @@
     "name": "Thomas Delaet",
     "email": "thomas@delaet.org"
   },
+  "contributors": [
+    {
+      "name": "Nico Janssens",
+      "email": "nico.b.janssens@gmail.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/MicroMinion/mm-services-mdns/issues"
