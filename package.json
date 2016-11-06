@@ -1,15 +1,15 @@
 {
   "name": "mm-services-mdns",
-  "version": "0.6.6",
+  "version": "0.6.8",
   "description": "mDNS service for MicroMinion platform",
   "main": "index.js",
   "dependencies": {
-    "multicast-dns": "^6.0.1",
-    "winston": "^2.2.0",
-    "winston-meta-wrapper": "^1.1.0"
+    "multicast-dns": "6.1.0",
+    "winston": "2.3.0",
+    "winston-meta-wrapper": "1.2.0"
   },
   "devDependencies": {
-    "publish": "^0.6.0"
+    "publish": "0.6.0"
   },
   "scripts": {
     "check-updates": "npm-check",
