@@ -25,7 +25,7 @@ var MdnsService = function (options) {
   this.messaging = options.platform.messaging
   this.mdns = new MulticastDNS({
     multicast: true,
-    loopback: false,
+    loopback: true,
     reuseAddr: true
   })
   this._queryAttempts = 0
